@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>IO Test</title>
+    <script>
+    const util = {
+        playerDistance: (p1, p2) => {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+    };
+    </script>
+    <style>
+    #nearby_player_stats_wrapper {
+
+    }
+    </style>
+</head>
+<body>
+    <fieldset>
+        <legend>nearby player stats</legend>
+        <div id="nearby_player_stats_wrapper"></div>
+    </fieldset>
+    <fieldset>
+        <legend>io test: move</legend>
+        <input id="move_vector" type="text" value='{"x":-1,"y":-1}'>
+        <input id="x_loc" type="text" value='100'>
+        <input id="y_loc" type="text" value='100'>
+    </fieldset>
+    <fieldset>
+        <legend>io test: action</legend>
+        <button id="attack" onclick="attackPlayersInRange()">Attack Nearest Player</button>
+    </fieldset>
+    <canvas id="game"></canvas>
+    <script>
+        window.g_me;
+        window.g_player_locations;
+
+        const connection = new WebSocket("http://localhost:PORT_GOES_HERE/");
+        connection.onopen = () => {
+            connection.send('hey') 
+        }
+        connection.onerror = (error) => {
+            console.log(`WebSocket error: ${error}`)
+        }
+        connection.onmessage = (data) => {
+            console.log('onmessage:', data);
+            // window.g_me = data.player;
+            // window.g_player_locations = data.players;
+        }
+
+        function attackPlayersInRange() {
+            const me = window.g_player_locations.find(player=>player.id === window.g_my_player_id);
+            console.log('me === ',me);
+            window.g_player_locations.filter(player=>{
+                return util.playerDistance(me, player) > me.range && player.id !== me.id;
+            })
+        }
+
+        const canvas = document.getElementById("game");
+        const width = canvas.width = 500;
+        const height = canvas.height = 500;
+        const ctx = canvas.getContext("2d");
+        let prevTickTime = Date.now();
+
+        function tick() {
+            const currTickTime = Date.now();
+            const secondsSinceLastTick = (currTickTime - prevTickTime)/1000;
+            g_player_locations.forEach(p=>{
+                p.x += (p.vx * p.speed) * secondsSinceLastTick;
+                p.y += (p.vy * p.speed) * secondsSinceLastTick;
+                if(p.x < 100){
+                    p.vx = 1;
+                    if(p.vy === 0)p.vy = -1;
+                    if(p.id === g_me.id)socket.emit("move", p);
+                }
+                else if(p.x > 400){
+                    p.vx = -1;
+                    if(p.id === g_me.id)socket.emit("move", p);
+                }
+                if(p.y < 100){
+                    p.vy = 1;
+                    if(p.id === g_me.id)socket.emit("move", p);
+                }
+                else if(p.y > 400){
+                    p.vy = -1;
+                    if(p.id === g_me.id)socket.emit("move", p);
+                }
+            });
+            draw();
+            prevTickTime = Date.now();
+            requestAnimationFrame(tick);
+        }
+        function draw() {
+            ctx.clearRect(0,0,width,height);
+            g_player_locations.forEach(p=>{
+                ctx.fillStyle = p.color;
+                const w = 20;
+                const h = 20;
+                const x = p.x - (w/2);
+                const y = p.y - (h/2);
+                ctx.fillRect(x,y,w,h);
+            });
+        }
+    </script>
+</body>
+</html>

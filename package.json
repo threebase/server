@@ -1,0 +1,12 @@
+{
+    "dependencies": {
+        "pg": "^7.15.1",
+        "path": "^0.12.7",
+        "express": "^4.17.1",
+        "body-parser": "^1.19.0",
+        "express-session": "^1.17.0",
+        "cookie": "^0.4.0",
+        "cookie-parser": "^1.4.4",
+        "memorystore": "^1.6.1"
+    }
+}
