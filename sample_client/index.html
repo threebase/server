@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" style="overflow:hidden;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>IO Test</title>
+    <script src="/node_modules/socket.io-client/dist/socket.io.js"></script>
+</head>
+<body style="margin:0;padding:0;">
+    <canvas id="game" style="background-color: #DDD"></canvas>
+    <script>
+        const util = {
+            playerDistance: (p1, p2) => {
+                return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+        };
+        let g_player;
+        let g_players = [];
+        let g_cursor;
+
+        const socket = io();
+
+        socket.on('init', function( data ){
+            console.log('init:', data);
+            g_player = data.player;
+            g_players = data.players;
+            tick();
+        })
+
+        socket.on('move', function( data ){
+            // console.log('move:', data);
+            g_players[data.id] = data;
+        })
+
+        socket.on('action', function( data ){
+            // console.log('action: ', data)
+        })
+
+        function attackPlayersInRange() {
+            const me = window.g_player_locations.find(player=>player.id === window.g_my_player_id);
+            console.log('me === ',me);
+            window.g_player_locations.filter(player=>{
+                return util.playerDistance(me, player) > me.range && player.id !== me.id;
+            })
+        }
+
+        const canvas = document.getElementById("game");
+        canvas.onmousemove = ev => {
+            g_cursor = [
+                ev.clientX,
+                ev.clientY
+            ];
+        }
+        const width = canvas.width = 300;
+        const height = canvas.height = 300;
+        const ctx = canvas.getContext("2d");
+        let prevTickTime = Date.now();
+
+        let count = 0;
+        function tick() {
+            const currTickTime = Date.now();
+            const secondsSinceLastTick = (currTickTime - prevTickTime)/1000;
+            localPlayerMove();
+            draw();
+            prevTickTime = Date.now();
+            count++;
+            requestAnimationFrame(tick);
+
+            function localPlayerMove(){
+                const p = g_players[g_player.id];
+                if(g_cursor){
+                    p.x = g_cursor[0];
+                    p.y = g_cursor[1];
+                    socket.emit("move", p);
+                } else {
+                    p.x += (p.vx * p.speed) * secondsSinceLastTick;
+                    p.y += (p.vy * p.speed) * secondsSinceLastTick;
+                    if(p.x < 50){
+                        p.vx = 1;
+                        p.vy = Math.random() > 0.5 ? -1 : 1;
+                    }
+                    else if(p.x > 250){
+                        p.vx = -1;
+                        p.vy = Math.random() > 0.5 ? -1 : 1;
+                    }
+                    if(p.y < 50){
+                        p.vy = 1;
+                        p.vx = Math.random() > 0.5 ? -1 : 1;
+                    }
+                    else if(p.y > 250){
+                        p.vy = -1;
+                        p.vx = Math.random() > 0.5 ? -1 : 1;
+                    }
+                }
+            }
+        }
+        function draw() {
+            ctx.clearRect(0,0,width,height);
+            Object.keys(g_players).forEach(pid=>{
+                const p = g_players[pid];
+                ctx.fillStyle = p.color;
+                const w = 20;
+                const h = 20;
+                const x = p.x - (w/2);
+                const y = p.y - (h/2);
+                ctx.fillRect(x,y,w,h);
+            });
+        }
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+    "websocket_port": 8080,
+    "express_port": 8090,
+    "postgres_port": 5432,
+    "secret": "SECRET_STRING_GOES_HERE",
+    "db_host": "localhost",
+    "db_name": "threebase",
+    "db_user": "postgres",
+    "db_pw": "your_postgres_password_goes_here"
+}
