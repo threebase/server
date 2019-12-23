@@ -99,6 +99,7 @@ DB.initDB(function(err, pg){
             socket.on('disconnect', function(data){
                 console.log('user disconnected: '+socket.id);
                 delete players[socket.id];
+                io.sockets.emit('remove-player', socket.id);
             });
             socket.on('move', function(player){
                 players[player.id] = player;

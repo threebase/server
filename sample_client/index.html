@@ -16,7 +16,7 @@
             }
         };
         let g_player;
-        let g_players = [];
+        let g_players = {};
         let g_cursor;
 
         const socket = io();
@@ -29,8 +29,11 @@
         })
 
         socket.on('move', function( data ){
-            // console.log('move:', data);
             g_players[data.id] = data;
+        })
+
+        socket.on('remove-player', function( playerId ){
+            delete g_players[playerId];
         })
 
         socket.on('action', function( data ){
@@ -52,6 +55,14 @@
                 ev.clientY
             ];
         }
+        canvas.onclick = ev => {
+            const div = document.createElement("div");
+
+            div.style.top = rect.top + "px";
+            div.style.left = rect.left + "px";
+            div.style.width = rect.width + "px";
+            div.style.height = rect.height + "px";
+        }
         const width = canvas.width = 300;
         const height = canvas.height = 300;
         const ctx = canvas.getContext("2d");
@@ -72,7 +83,6 @@
                 if(g_cursor){
                     p.x = g_cursor[0];
                     p.y = g_cursor[1];
-                    socket.emit("move", p);
                 } else {
                     p.x += (p.vx * p.speed) * secondsSinceLastTick;
                     p.y += (p.vy * p.speed) * secondsSinceLastTick;
@@ -93,6 +103,7 @@
                         p.vx = Math.random() > 0.5 ? -1 : 1;
                     }
                 }
+                socket.emit("move", p);
             }
         }
         function draw() {
